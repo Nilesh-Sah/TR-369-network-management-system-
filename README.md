@@ -1,129 +1,113 @@
 # TR-369-network-management-system#
 
-TR‑369 Network Management System — Initial Setup
-This section documents the initial environment setup for the TR‑369/USP‑based centralized network‑management system.
-It covers preparing the physical server, installing VMware ESXi, and deploying an Ubuntu Server (CUI) VM that will later host the ACS and related components.
 
-1. Server Preparation & ESXi Installation
-01
-Prepare the Physical Server
-Ensure the hardware is ready to host ESXi and virtual machines.
 
-Connect power, monitor, and keyboard
+🚀 TR‑369 Network Management System
+Infrastructure Setup — From Bare‑Metal Server to Ubuntu CUI VM
+Before deploying the ACS, USP agents, dashboards, and automation workflows, we first build a solid foundation.
+This section documents the journey from bare‑metal hardware → ESXi hypervisor → Ubuntu Server (CUI) — the core platform powering the entire TR‑369 system.
 
-Verify CPU virtualization support (Intel VT‑x / AMD‑V)
+🖥️ 1. Preparing the Server & Installing ESXi
+Your physical server becomes a virtualization platform using VMware ESXi.
+Follow the steps below to get the hypervisor up and running.
 
-Enable virtualization in BIOS
+🔧 1.1 Create a Bootable ESXi Installer
+Download the ESXi ISO from VMware.
 
-Set boot order to USB/DVD depending on installation media
+Flash it to a USB drive using Rufus or BalenaEtcher.
 
-02
-Create ESXi Installation Media
-You need a bootable installer to deploy VMware ESXi on the server.
+Insert the USB into your server.
 
-Download ESXi ISO from VMware
+⚙️ 1.2 Boot Into the ESXi Installer
+Power on the server.
 
-Use Rufus or BalenaEtcher to create a bootable USB
+Open the boot menu.
 
-Insert the USB into the server
+Select the USB drive.
 
-03
-Install VMware ESXi
-Deploy the hypervisor that will host your Ubuntu VM.
+Wait for the ESXi installer to load.
 
-Boot the server from the ESXi USB installer
+📦 1.3 Install ESXi on the Server
+Accept the license agreement.
 
-Follow on‑screen prompts to install ESXi on the server’s storage
+Select the internal storage as the installation target.
 
-Set a strong root password
+Choose your keyboard layout.
 
-Reboot and remove installation media
+Set a strong root password.
 
-04
-Configure ESXi Management Network
-Set up the network so you can access ESXi remotely.
+Reboot when installation completes.
 
-Assign a static IP address to ESXi
+🌐 1.4 Access ESXi From Your Computer
+Once ESXi boots, it displays its management IP.
 
-Configure subnet mask and gateway
+From your PC browser:
 
-Verify network connectivity using ping
+Code
+https://<ESXi-IP-address>
+Log in using the root credentials you created.
 
-Note the ESXi management IP for browser access
+You now have a fully operational ESXi hypervisor.
 
-05
-Access ESXi Web UI
-Use your computer to manage the hypervisor remotely.
+🐧 2. Deploying Ubuntu Server (CUI) on ESXi
+With ESXi ready, the next step is creating the VM that will host your ACS, monitoring stack, and automation services.
 
-Open a browser and enter: https://<ESXi-IP>
+🆕 2.1 Create a New Virtual Machine
+In the ESXi web UI:
 
-Log in using the root credentials
-
-Confirm the dashboard loads successfully
-
-2. Deploying Ubuntu Server (CUI) on ESXi
-06
-Upload Ubuntu Server ISO
-Add the Ubuntu installation image to ESXi so you can create a VM.
-
-Download Ubuntu Server ISO (22.04 LTS recommended)
-
-In ESXi → Storage → Datastore Browser
-
-Upload the ISO to a folder (e.g., iso/)
-
-07
-Create a New Virtual Machine
-Set up the VM that will run your ACS and backend services.
-
-Click Create/Register VM
+Click Create / Register VM
 
 Select Create a new virtual machine
 
-Choose compatibility and Linux → Ubuntu (64‑bit)
+Name it:
+ubuntu-acs-server
 
-Assign CPU, RAM (4–8GB recommended), and disk (40GB+)
+Choose:
 
-08
-Attach the Ubuntu ISO
-Mount the installation media to boot the VM.
+Compatibility: ESXi 7 or later
 
-Edit VM settings
+Guest OS: Linux
 
-Select CD/DVD Drive → Datastore ISO file
+Version: Ubuntu Linux (64‑bit)
 
-Choose the uploaded Ubuntu ISO
+💾 2.2 Assign VM Resources
+Recommended starting configuration:
 
-Enable Connect at power on
+CPU: 2 vCPUs
 
-09
-Install Ubuntu Server (CUI)
-Deploy the minimal command‑line Ubuntu environment.
+RAM: 4–8 GB
 
-Power on the VM and open the console
+Storage: 40–60 GB
 
-Select Install Ubuntu Server
+Network: Connect to your management VLAN or default network
 
-Choose language, keyboard, and network settings
+You can scale resources later if needed.
+
+📥 2.3 Mount the Ubuntu ISO
+Upload the Ubuntu Server ISO to the ESXi datastore.
+
+Attach it to the VM’s CD/DVD drive.
+
+▶️ 2.4 Install Ubuntu Server (CUI)
+Inside the VM console:
+
+Select Ubuntu Server (no GUI)
+
+Choose language + keyboard layout
+
+Configure network (DHCP or static)
 
 Set hostname (e.g., acs-server)
 
-Create a user and password
+Create your admin user
 
-Select Install OpenSSH Server (important)
+Enable OpenSSH Server
 
 Complete installation and reboot
 
-10
-Perform Initial Ubuntu Configuration
-Prepare the server for ACS installation and networking.
+🔌 2.5 SSH Into the Ubuntu VM
+From your PC terminal:
 
-Log in via ESXi console or SSH
-
-Run: sudo apt update && sudo apt upgrade -y
-
-Set a static IP if needed
-
-Verify network connectivity with ping google.com
-
-Confirm SSH access from your computer
+Code
+ssh <username>@<ubuntu-ip>
+You now have full CLI access to your Ubuntu server — ready for Docker, ACS deployment, USP agents, and more.
