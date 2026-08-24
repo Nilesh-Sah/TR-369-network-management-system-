@@ -114,10 +114,76 @@ You now have full CLI access to your Ubuntu server — ready for Docker, ACS dep
 
 
 
-Here is the overall gist of the entire project 
+###Here is the overall gist of the entire project 
 
 Oktopus — get the controller + MQTT broker running on your Ubuntu VM, confirm the dashboard loads
 obuspa agent — spin up a second VM/container, register it to Oktopus, confirm it shows up as a managed device
 LibreNMS — install (its own VM is cleanest, or same host if resources allow), add your Catalyst 2960-S and L3 switch via SNMP, confirm graphs/discovery work
 daloRADIUS + FreeRADIUS — set up RADIUS auth, then point your switches' AAA config at it for admin login
 Wire alerts/reporting — LibreNMS email alerts for faults, scheduled health reports
+
+For me wget was already preinstalled.
+
+wget is already there, and you just need Docker and unzip. Use docker.io from apt rather than the snap package — it's the more standard route for server setups and avoids snap's confinement quirks interfering with container networking/volumes later.
+
+####for ducker installation 
+'''sudo apt update
+sudo apt install -y docker.io docker-compose-v2 unzip'''
+
+After that, add your user to the docker group so you don't need sudo for every docker command, then reload your session:
+
+
+'''sudo usermod -aG docker $USER
+newgrp docker'''
+
+###Then verify:
+
+'''docker --version
+docker compose version
+unzip -v'''
+
+
+After all of this is set. Let's pull Oktopus.
+
+'''
+wget https://github.com/OktopUSP/oktopus/archive/refs/heads/main.zip
+unzip main
+cd oktopus-main/deploy/compose
+
+'''
+
+
+First, exit nano without saving to reset the file:
+
+Ctrl+X, then N (don't save)
+
+Then append the line directly from the shell:
+
+
+'openssl rand -hex 32'
+
+Copy the output (a 64-character hex string), then run (replacing PASTE_YOUR_KEY_HERE with what you copied):
+
+
+'echo "SECRET_API_KEY=PASTE_YOUR_KEY_HERE" >> .env.controller'
+
+Then verify it landed correctly:
+
+
+''cat .env.controller
+
+You should now see all 6 original lines plus your new SECRET_API_KEY=... line at the bottom.
+Paste that output (redact the key value if you want) and we'll move on to bringing the stack up.
+
+
+now bring the whole stack up. This single command starts all the services (NATS broker, controller backend, CWMP/MQTT/STOMP/WS adapters, frontend, and Portainer for container management) at once, using the profiles that match your USP-over-MQTT setup:
+
+
+
+'COMPOSE_PROFILES=nats,controller,cwmp,mqtt,stomp,ws,adapter,frontend,portainer docker compose up -d'
+
+
+This will take a minute or two the first time since it's pulling several container images. Once it finishes, check that everything actually started cleanly:
+
+
+'docker compose ps'
