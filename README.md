@@ -111,3 +111,13 @@ From your PC terminal:
 Code
 ssh <username>@<ubuntu-ip>
 You now have full CLI access to your Ubuntu server — ready for Docker, ACS deployment, USP agents, and more.
+
+
+
+Here is the overall gist of the entire project 
+
+Oktopus — get the controller + MQTT broker running on your Ubuntu VM, confirm the dashboard loads
+obuspa agent — spin up a second VM/container, register it to Oktopus, confirm it shows up as a managed device
+LibreNMS — install (its own VM is cleanest, or same host if resources allow), add your Catalyst 2960-S and L3 switch via SNMP, confirm graphs/discovery work
+daloRADIUS + FreeRADIUS — set up RADIUS auth, then point your switches' AAA config at it for admin login
+Wire alerts/reporting — LibreNMS email alerts for faults, scheduled health reports
