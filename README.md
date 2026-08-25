@@ -189,3 +189,42 @@ This will take a minute or two the first time since it's pulling several contain
 
 
 'docker compose ps'
+
+
+about directory management 
+
+Here's the general rule so you don't have to ask each time:
+
+Any command starting with docker compose ... (up, ps, logs, down, config, etc.) → must be run from ~/oktopus-main/deploy/compose. 
+It won't find the project from anywhere else unless you add -f /path/to/docker-compose.yml.
+
+Everything else — cat, nano, grep, openssl, apt install, ip addr, docker ps (plain Docker, not compose) — works from any directory, since they're
+not tied to a specific project folder.
+
+Good catch on the timing — but here's what actually happened: closing your laptop shouldn't have stopped anything, since the VM lives on the Nokia server (not your laptop) and should keep running independently of your SSH session. What actually broke this run is different — look closely at your last `docker compose up -d` output: it only started **2 containers** (`nginx`, `file-server`) instead of the full stack. That's because this time you ran plain `docker compose up -d` **without** the `COMPOSE_PROFILES=...` variable in front of it — so Compose only started the two services that have no profile requirement, and skipped `mongo_usp`, `controller`, `acs`, etc. entirely.
+
+## The core issue: profiles aren't remembered
+
+Every time you run `docker compose up`, you need to re-specify `COMPOSE_PROFILES=...` unless it's saved somewhere persistent. Let's fix that so you don't have to type it every time.
+
+**1. Create a plain `.env` file** (different from `.env.controller`) in the same directory — Compose reads `.env` automatically without you specifying anything:
+```bash
+echo "COMPOSE_PROFILES=nats,controller,cwmp,mqtt,stomp,ws,adapter,frontend,portainer" > .env
+```
+
+**2. Now just run:**
+```bash
+docker compose up -d
+docker compose ps -a
+```
+This should bring up all 15 services, including `mongo_usp`, without needing the long inline variable anymore.
+
+## Your actual question: do you have to re-run this every time you power on?
+
+Yes, currently — because none of these containers has a **restart policy** set, so Docker won't automatically bring them back up after a reboot or crash. Two options:
+
+- **Manual (simplest for now):** every time you come back to work on this, `cd` into the compose directory and run `docker compose up -d`. With the `.env` fix above, that's the only command you'll need going forward.
+- **Automatic (later, once things are stable):** we can add `restart: unless-stopped` to each service in `docker-compose.yml`, which makes Docker auto-restart them whenever the Docker daemon itself starts (e.g., after a VM reboot). I'd hold off on this until we've actually got `mongo_usp` and the rest healthy first — no point auto-restarting something broken.
+
+Run the `.env` fix and the two commands above, then paste `docker compose ps -a` — that should finally show us `mongo_usp` and `controller` actually starting.
+
