@@ -183,6 +183,8 @@ now bring the whole stack up. This single command starts all the services (NATS 
 'COMPOSE_PROFILES=nats,controller,cwmp,mqtt,stomp,ws,adapter,frontend,portainer docker compose up -d'
 
 
+
+
 This will take a minute or two the first time since it's pulling several container images. Once it finishes, check that everything actually started cleanly:
 
 
